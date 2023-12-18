@@ -417,7 +417,8 @@ def get_gc(SERVICE_ACCOUNT_JSON):
     credentials = None
     if os.path.exists(SERVICE_ACCOUNT_JSON):
         credentials = Credentials.from_service_account_file(
-            "./service_account.json", scopes=SCOPES
+            SERVICE_ACCOUNT_JSON, 
+            scopes=SCOPES
         )
 
     # Authorize using the service account credentials
@@ -467,7 +468,7 @@ def launch_periodic_trigger(spreadsheet, time_interval):
 
 def init_connection(TARGET_SPREADSHEET_ID, SERVICE_ACCOUNT_JSON):
     logging.info("Initializing connection to Google Sheets")
-    gc = get_gc()
+    gc = get_gc(SERVICE_ACCOUNT_JSON)
     spreadsheet = gc.open_by_key(TARGET_SPREADSHEET_ID)
     return spreadsheet
 

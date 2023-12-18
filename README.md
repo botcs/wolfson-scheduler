@@ -19,10 +19,13 @@ cd wolfson-scheduler
 conda create -f requirements.yml
 conda activate scheduler
 
-# Launch server
-TARGET_URL=<URL of your copy of the scheduler Google Sheets>
+# Specify the ID of the Google Sheet
+TARGET_ID=<ID of your copy of the scheduler Google Sheets>
+# e.g. if this is the URL: https://docs.google.com/spreadsheets/d/1Lp2s6J7ZfjsjSEf9f0xAunuB1ehKTM6zPfsTSaKRQSA/edit#gid=2093421010
+# then TARGET_ID=1Lp2s6J7ZfjsjSEf9f0xAunuB1ehKTM6zPfsTSaKRQSA
 
-python server.py --target_spreadsheet_id=TARGET_URL --service_account_json="./service_account.json"
+# Launch server
+python server.py --target_spreadsheet_id=TARGET_ID --service_account_json="./service_account.json"
 ```
 
 ## Components
