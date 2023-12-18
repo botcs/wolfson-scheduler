@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wolfson Scheduler</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond&display=swap" rel="stylesheet">
+    
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        body {
+            font-family: 'EB Garamond', serif;
+            font-size: 1em;
+            text-align: justify;
+            max-width: 60%;
+            min-width: 800px;
+            margin: auto; /* Centers the content */
+            /* padding: 0 20; Optional: Adds some padding on the sides */
+        }
+
+        h1 {
+            font-size: 5em;
+            text-align: center;
+            margin-bottom: 0;
+        }
+        p {
+            font-family: 'EB Garamond', serif;
+            font-size: 18px;
+            text-align: justify;
+            margin-top: 5;
+        }
+        a {
+            color: black;
+        }
+        #visualization {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #fig2 {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #fig1 {
+            width: 100%; /* Scale based on the container's width */
+            height: auto; /* Height will scale automatically */
+            max-height: calc(250px / 800px * 100vw); 
+            align-items: center;
+        }
+        #fig2-svg {
+            /* display: flex;
+            flex-direction: column;
+            align-items: center; */
+            width: 100%; /* Scale based on the container's width */
+            height: auto; /* Height will scale automatically */
+            max-height: calc(350px / 800px * 100vw); 
+        }
+        .svg-fig {
+            display: flex; /* Aligns children (img) in a row */
+            justify-content: center; /* Centers children in the container */
+            align-items: center; /* Aligns children vertically */
+            width: 100%; /* Sets the width of the container to 100% of its parent */
+        }
+
+        .svg-fig img {
+            max-width: 50%; /* Each image can take up to half of the container's width */
+            height: auto; /* Keeps the aspect ratio of the images */
+            display: block; /* Allows the use of max-width and height */
+        }
+        .circle {
+            fill: transparent;
+            stroke: black;
+        }
+
+        .boat {
+            cursor: pointer;
+            stroke: black;
+            stroke-width: 2px;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+
+        .boat.red {
+            fill: red;
+        }
+
+        .boat.orange {
+            fill: orange;
+        }
+
+        .boat.purple {
+            fill: purple;
+        }
+
+        .combCircle {
+            fill: transparent;
+            stroke: rgba(128, 128, 128, 0.342);
+            stroke-width: 2px;
+        }
+        .combCircle.selected {
+            stroke-width: 4px;
+            stroke: red;
+        }
+        .button {
+            cursor: pointer;
+        }
+
+        .connector {
+            fill: none;
+            stroke: black;
+            stroke-width: 2px;
+            opacity: 1;
+        }
+
+        button {
+            /* Basic styling */
+            background-color: white;   /* White frontground */
+            color: black;              /* Text color */
+            border: 3px solid black;   /* Wide black border */
+            padding: 10px 20px;        /* Padding around the text */
+            font-size: 16px;           /* Font size */
+            cursor: pointer;           /* Cursor changes to a pointer on hover */
+            border-radius: 15px;       /* Rounded corners */
+            transition: all 0.3s;      /* Smooth transition for hover effects */
+            text-align: center;        /* Center the text */
+            text-decoration: none;     /* Remove underline from links, if applicable */
+            display: inline-block;     /* Allows setting dimensions and alignment */
+        }
+
+        button:hover {
+            background-color: #ffb9b9; /* Pastel red frontground on hover */
+            border-color: transparent;
+        }
+
+        button:active {
+            background-color: #ff7b7b; /* Darker red frontground on click */
+            border-color: transparent;
+        }
+
+        #contributors {
+            display: flex;
+            justify-content: space-around; /* This will distribute the space evenly */
+            text-align: center; /* Center-align the text for each contributor */
+        }
+
+        .contributor {
+            display: flex;
+            flex-direction: column; /* Stack the name and title vertically */
+            align-items: center; /* Center-align items vertically */
+        }
+        .contributor span {
+            font-size: 20px; /* Smaller font size for the title */
+            font-weight: bold; /* Bold font for the title */
+            /* color: rgb(157, 0, 0); Dark gray color for the title */
+        }
+
+        .title {
+            margin-top: 0.1em; /* Provide some space between the name and the title */
+        }
+
+        @media (max-width: 900px) {
+            svg {
+                max-width: 100%; /* Allow the SVG to fill the container on small screens */
+            }
+
+            body {
+                /* font-size: 1em; Adjust font size for mobile */
+                background-color: white;
+                min-width: 350px;
+                font-size: 0.8em;
+                
+                margin: auto; /* Centers the content */
+            }
+            h1 {
+                font-size: 3em;
+                text-align: center;
+                margin-bottom: 0;
+            }
+            #acknowledgment, #contributors, .contributor, .title {
+                /* Adjust spacing and layout for mobile */
+                padding: 10px;
+            }
+            .svg-fig {
+                display: flex; /* Align children (img) in a row */
+                justify-content: space-around; /* Distribute extra space evenly */
+                align-items: center; /* Align children vertically in the center */
+                flex-wrap: wrap; /* Allow items to wrap if needed */
+            }
+
+            .svg-fig img {
+                flex: 1; /* Allow each image to grow */
+                max-width: 50%; /* Maximum width of each image */
+                height: auto; /* Maintain aspect ratio */
+            }
+            .title {
+                margin-top: 0.1em; /* Provide some space between the name and the title */
+                font-size: 0.8em;
+            }
+        }
+        
+
+    </style>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TCWJ0JB5KY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-TCWJ0JB5KY');
+</script>
+<body>
+    <!-- write Wo in red and Sch in orange -->
+    <h1>
+        <span style="color: rgb(157, 0, 0);">Wo</span>lfson <span style="color: rgb(189, 123, 1);">Sch</span>eduler
+        <!-- Wolfson Scheduler -->
+    </h1>
+    <p style="text-align: center;">
+        by <a href="https://botcs.github.io/academic/">Botos Csabi</a>
+        </br>
+        [<a href="https://github.com/botcs/wcbc-autosched">code</a>]
+        [<a href="https://docs.google.com/spreadsheets/d/1Lp2s6J7ZfjsjSEf9f0xAunuB1ehKTM6zPfsTSaKRQSA/edit#gid=0>">demo</a>]
+        [paper (coming soon)]
+    </p>
+
+    <div id="visualization">
+        <svg viewBox="0 0 800 250" id="fig1-svg"></svg>
+    </div>
+
+    <p>
+        The Wolfson Scheduler (WoSch) is a tool developed to help the colleges organize rowing outings. 
+        WoSch helps by drafting the weekly schedule of outings, accommodating the preferences and skill levels of the rowers,
+        and the scheduling policies of the coaches and captains.
+        This project is open-source and available on <a href="https://github.com/botcs/wcbc-autosched">GitHub</a>.
+        The <a href="https://docs.google.com/spreadsheets/d/1Lp2s6J7ZfjsjSEf9f0xAunuB1ehKTM6zPfsTSaKRQSA/edit#gid=0>">demo</a> 
+        works through the interface of Google Sheets,
+        meaning that no installation or programming knowledge is required to use it.
+    </p>
+
+    <script>
+        function delay(time) {
+            return new Promise(resolve => setTimeout(resolve, time));
+        }
+
+
+        function multisetPermutation(setSizes) {
+            // Generate the multiset
+            let multiset = [];
+            let currentNumber = 0;
+            for (let size of setSizes) {
+                for (let i = 0; i < size; i++) {
+                    multiset.push(currentNumber);
+                }
+                currentNumber++;
+            }
+
+            // Shuffle the multiset to create a permutation
+            for (trial = 0; trial < 1; trial++) {
+                for (let i = multiset.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [multiset[i], multiset[j]] = [multiset[j], multiset[i]];
+                }
+            }
+
+            return multiset;
+        }
+
+        // Function to create the path for the curve
+        function createVertConnector(fromP, toP) {
+            fromP.x = parseInt(fromP.x);
+            fromP.y = parseInt(fromP.y);
+            toP.x = parseInt(toP.x);
+            toP.y = parseInt(toP.y);
+            const path = d3.path();
+            path.moveTo(fromP.x, fromP.y);
+            sharpness = 0.5;
+            const control1X = fromP.x;
+            const control1Y = fromP.y + sharpness * (toP.y - fromP.y);
+            const control2X = toP.x;
+            const control2Y = toP.y - sharpness * (toP.y - fromP.y);
+
+            // path.quadraticCurveTo(controlX, controlY, toP.x, toP.y);
+            path.bezierCurveTo(control1X, control1Y, control2X, control2Y, toP.x, toP.y);
+            return path.toString();
+        }
+
+        function createHorConnector(fromP, toP) {
+            fromP.x = parseInt(fromP.x);
+            fromP.y = parseInt(fromP.y);
+            toP.x = parseInt(toP.x);
+            toP.y = parseInt(toP.y);
+            const path = d3.path();
+            path.moveTo(fromP.x, fromP.y);
+            sharpness = 0.5;
+            const control1X = fromP.x + sharpness * (toP.x - fromP.x);
+            const control1Y = fromP.y;
+            const control2X = toP.x - sharpness * (toP.x - fromP.x);
+            const control2Y = toP.y;
+            path.bezierCurveTo(control1X, control1Y, control2X, control2Y, toP.x, toP.y);
+            return path.toString();
+        }
+
+
+
+        function drawMain(){
+
+            const width = 800;
+            const height = 300;
+            const svg = d3.select('#fig1-svg')
+            const num_rowers = 20;
+
+            // boat data
+            const boatData = [
+                { value: 8, x: 170, y: 50, color: 'red' },
+                { value: 4, x: 370, y: 50, color: 'orange' },
+                { value: 4, x: 570, y: 50, color: 'purple' }
+            ];
+            const num_seats = boatData.reduce((acc, curr) => acc + curr.value, 0);
+            const num_reserves = num_rowers - num_seats;
+
+            // Create boats
+            let boatShape = "M16.25,8a5.73,5.73,0,0,0,3.2-1h0A1,1,0,0,1,21,7.86v1.2A4,4,0,0,1,17.06,13H6.94A4,4,0,0,1,3,9.06V7.86A1,1,0,0,1,4.55,7h0a5.73,5.73,0,0,0,3.2,1ZM16,16.79,7.78,5m8.58,14-.57-.82A1,1,0,0,1,16,16.79h0a1,1,0,0,1,1.4.24l.57.82Z";
+            const boatShapeScale = 3;
+            const boats = svg.selectAll('.boat')
+                .data(boatData)
+                .enter().append('path')
+                .attr('class', d => `boat ${d.color}`)
+                // load d from boat.svg
+                .attr('d', boatShape)
+                .attr('transform', d => `translate(${d.x}, ${d.y}) scale(${boatShapeScale})`)
+                .attr('connect_x', d => d.x + 16*boatShapeScale)
+                .attr('connect_y', d => d.y + 20*boatShapeScale);
+
+            
+            // Add text to boats
+            svg.selectAll('.boat-text')
+                .data(boatData)
+                .enter().append('text')
+                .attr('class', 'boat-text')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y + 100)
+                .text(d => d.value)
+                .attr('text-anchor', 'middle')
+                .attr('fill', 'white');
+
+
+            // Create 20 circles
+            svg.selectAll('.circle')
+                .data(new Array(num_rowers))
+                .enter().append('circle')
+                .attr('class', 'circle')
+                .attr('cx', (d, i) => 50 + i * 35)
+                .attr('cy', 200)
+                .attr('r', 15)
+                .style('stroke-width', 2)
+                .attr('connect_x', (d, i) => 50 + i * 35)
+                .attr('connect_y', 200-15);
+
+            // For each circle, add a path to connect it to the boat
+            svg.selectAll('.connector')
+                .data(new Array(num_rowers))
+                .enter().append('path')
+                .attr('class', 'connector')
+                .attr('d', d => `M 0 0 l 0 0 z`)
+                .style('opacity', 0);
+                
+            
+            
+
+            function connectRowerToBoat(rowerIdx, boatIdx) {
+                const rower = svg.selectAll('.circle').filter((d, i) => i === rowerIdx);
+                const curve = svg.selectAll('.connector').filter((d, i) => i === rowerIdx);
+                const boat = svg.selectAll('.boat').filter((d, i) => i === boatIdx);
+                const color = boat.data()[0].color;
+                
+                const boat_x = parseInt(boat.attr('connect_x'));
+                const boat_y = parseInt(boat.attr('connect_y'));
+                const boatPos = { x: boat_x, y: boat_y };
+
+                const rower_x = parseInt(rower.attr('connect_x'));
+                const rower_y = parseInt(rower.attr('connect_y'));
+                const rower_pos = { x: rower_x, y: rower_y };
+
+                curve.attr('d', createVertConnector(boatPos, rower_pos))
+                    .transition()
+                    .duration(500)
+                    .style('stroke', color)
+                    .style('opacity', .6);
+
+                rower.transition()
+                    .duration(500)
+                    .style('stroke-width', 4)
+                    .style('stroke', color);
+            }
+
+            let finishedDrawing = true;
+            async function resetConnections() {
+
+                svg.selectAll('.connector')
+                    .transition()
+                    .duration(500)
+                    .style('opacity', 0);
+                
+                svg.selectAll('.circle')
+                    .transition()
+                    .duration(500)
+                    .style('stroke-width', 2)
+                    .style('stroke', 'black');
+                    
+                await delay(600);    
+            }
+
+            async function drawConnections() {
+                    if (!finishedDrawing){
+                        return;
+                    };
+                    finishedDrawing = false;
+                    await resetConnections();
+                    
+                    boatSizes = boatData.map(d => d.value);
+                    boatSizes.push(num_reserves);
+                    const newMultiset = multisetPermutation(boatSizes);
+                    // draw boat by boat
+                    for (let i = 0; i < boatData.length; i++) {
+                        const boat = boatData[i];
+                        for (let j = 0; j < num_rowers; j++) {
+                            if (newMultiset[j] === i) {
+                                // connect rower to boat
+                                connectRowerToBoat(j, i);
+                                await delay(200);
+                            }
+                        }
+                    }
+                    finishedDrawing = true;
+                }
+
+            // Add button to generate a new permutation
+            const button = d3.select('#visualization').append('button')
+                .text('Generate new assignment')
+                .on('click', drawConnections);
+
+            // when the page loads, draw the first permutation
+            d3.select(window).on('load', drawConnections);
+        }
+        drawMain();
+    </script>
+
+    <h2>How to use? (Coming soon)</h2>
+    <p>
+        Here will be a short video tutorial on how to use the live demo.
+    </p>
+    <p>
+        And another how to set up your own copy of the scheduler.
+    </p>
+    <h2>How does it work?</h2>
+    <p>
+        The scheduler works by utilizing the power of parallelism.
+        For every outing we have a set of boats, and a set of rowers (let's assume that everyone is available for simplicity).
+        In the first stage, the scheduler enumerates all possible ways to assign rowers to boats per outing.
+        Followed by that, the weekly schedules are generated by combining the possible assignments for each outing.
+        Once a weekly schedule is ready, the scheduler calculates a weighted score for it, where preferences of
+        the rowers and the coaches are taken into account.
+        In our example the scores (white is less favourable, green is more favourable) are just randomly assigned,
+        but in reality one can optimize for lowest variance
+        of skill levels in each boat, least number of overassignments, etc.
+        The evaluation scheme is fairly flexible, and can be adjusted to the needs of the college.
+        Finally, the scheduler ranks every evaluated weekly schedule and returns the best one.
+    </p>
+    <div id="fig2">
+        <svg viewBox="0 0 800 350" id="fig2-svg"></svg>
+    </div>
+    
+    <script>
+        // Here we only draw the permutations of the colors on limited number of circles
+        // e.g. 2 red, 1 orange, 1 purple
+        async function drawFig2() {
+            const svg = d3.select('#fig2-svg');
+            const num_rowers = 5;
+            const num_outings = 3;
+            const num_comb = 4;
+            const boatData = [
+                { value: 2, color: 'red' },
+                { value: 1, color: 'orange' },
+                { value: 1, color: 'purple' },
+                { value: 1, color: 'transparent'}
+            ];
+            
+            // Horizontal offsets
+            const offsets = [30, 230, 430, 650];
+
+
+            // Draw a button to restart the animation
+            const button = d3.select('#fig2').append('button')
+                .text('Restart animation')
+                .on('click', drawAllCombination);
+
+            let highlightBoxes = [];
+            let connectors = [];
+            const outings = [];
+            async function drawOutings(){
+                for (let outing_idx = 0; outing_idx < num_outings; outing_idx++) {
+                    outings.push([]);
+                    offsetX = offsets[outing_idx];
+                    outingGroup = svg.append('g')
+                        .attr('transform', `translate(${offsetX}, 20)`);
+                    for (let comb_idx = 0; comb_idx < num_comb; comb_idx++) {
+                        offsetY = comb_idx * 50;
+                        const combGroup = outingGroup.append('g')
+                            .attr('transform', `translate(0, ${offsetY})`);
+
+                        const permutation = multisetPermutation(boatData.map(d => d.value));
+                        // Draw circles
+                        combGroup.selectAll('.circle')
+                            .data(permutation)
+                            .enter().append('circle')
+                            .attr('class', 'circle')
+                            .attr('cx', (d, i) => i * 35)
+                            .attr('cy', 20)
+                            .attr('r', 15)
+                            .style('stroke', d => boatData[d].color)
+                            .style('stroke-width', 2)
+                            .style('opacity', 0)
+                            .transition()
+                            .duration(500)
+                            .style('opacity', 1);
+                        
+                        // Draw a rounded rectangle around the circles
+                        const rect = combGroup.append('rect')
+                            .attr('x', -20)
+                            .attr('y', 0)
+                            .attr('rx', 10)
+                            .attr('ry', 10)
+                            .attr('width', 5 + num_rowers * 35)
+                            .attr('height', 40)
+                            .style('fill', 'none')
+                            .style('stroke', 'gray')
+                            .style('stroke-width', 1)
+                            .style('opacity', 0)
+                            .transition()
+                            .duration(500)
+                            .style('opacity', 1);
+
+                        
+                        
+                        outings[outing_idx].push(combGroup);
+                        await delay(100);
+                    }
+                    // At the bottom of the column write the outing number
+                    // get the bottom coordinate
+                    const textX = outingGroup.node().getBBox().x + outingGroup.node().getBBox().width / 2;
+                    const textY = outingGroup.node().getBBox().y + outingGroup.node().getBBox().height + 20;
+                    
+                    outingGroup.append('text')
+                        .attr('x', textX)
+                        .attr('y', textY)
+                        .text(`Outing ${outing_idx+1}`)
+                        .style('font-size', 20)
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', 'black')
+                        .style('opacity', 0)
+                        .transition()
+                        .duration(500)
+                        .style('opacity', 1);
+
+                    // Draw a highlight box that will slide over the combinations
+                    const highlightBox = outingGroup.append('rect')
+                            .attr('id', `highlightBox${outing_idx}`)
+                            .attr('x', -20)
+                            .attr('y', 0)
+                            .attr('rx', 10)
+                            .attr('ry', 10)
+                            .attr('width', 5 + num_rowers * 35)
+                            .attr('height', 40)
+                            .style('fill', 'none')
+                            .style('stroke', 'black')
+                            .style('stroke-width', 3)
+                            .style('opacity', 0);
+
+                    const connector = outingGroup.append('path')
+                        .style('stroke', 'black')
+                        .style('stroke-width', 3)
+                        .style('opacity', 0);
+                    
+                    highlightBoxes.push(highlightBox);
+                    connectors.push(connector);
+                    await delay(1000);
+                };
+            }
+            await drawOutings();
+
+
+            // In the last column draw a 3D cube of circles
+            // with the dimensions of [num_combinations_per_outing, num_combinations_per_outing, num_combinations_per_outing]
+
+            const indices = Array.from(Array(num_comb ** num_outings).keys());
+            scores = indices.map(i => i/(64*0.8));
+            for (let i = scores.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [scores[i], scores[j]] = [scores[j], scores[i]];
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+
+            // swap the indices with the values in origIndices
+            const origIndices = scores.map(() => 0);
+            for (let i = 0; i < scores.length; i++) {
+                origIndices[indices[i]] = i;
+            }
+
+            // reshape the scores
+            const reshapedScores = [];
+            for (let i = 0; i < num_comb; i++) {
+                reshapedScores.push([]);
+                for (let j = 0; j < num_comb; j++) {
+                    reshapedScores[i].push([]);
+                    for (let k = 0; k < num_comb; k++) {
+                        reshapedScores[i][j].push(scores[i * num_comb * num_comb + j * num_comb + k]);
+                    }
+                }
+            }
+            scores = reshapedScores;
+
+            // draw the circles
+            const spacingX = 28; // horizontal spacing between circles
+            const spacingY = 55; // vertical spacing between circles
+            const spacingZ = 10; // the shift for depth (z-axis)
+            let scoreCircles = [];
+            const cubeGroup = svg.append('g')
+                .attr('transform', `translate(${offsets[3]}, 20)`);
+            for (let i = 0; i < num_comb; i++) {
+                scoreCircles.push([]);
+                const depthLattice = cubeGroup.append('g')
+                    .attr('transform', `translate(${i*spacingZ}, ${i * spacingZ})`);
+                for (let j = 0; j < num_comb; j++) {
+                    scoreCircles[i].push([]);
+                    for (let k = 0; k < num_comb; k++) {
+                        const circle = depthLattice.append('circle')
+                            .classed('combCircle', true)
+                            .attr('cx', j * spacingX)
+                            .attr('cy', k * spacingY)
+                            .attr('r', 10)
+                            .style('fill', 'transparent')
+                            .style('opacity', 0);
+                        scoreCircles[i][j].push(circle);
+                    }           
+                }
+            }
+
+            // swap the axes [0, 1, 2] -> [2, 0, 1]
+            const rotatedScoreCircles = [];
+            for (let i = 0; i < num_comb; i++) {
+                rotatedScoreCircles.push([]);
+                for (let j = 0; j < num_comb; j++) {
+                    rotatedScoreCircles[i].push([]);
+                    for (let k = 0; k < num_comb; k++) {
+                        rotatedScoreCircles[i][j].push(scoreCircles[j][k][i]);
+                    }
+                }
+            }
+            scoreCircles = rotatedScoreCircles;
+
+            cubeGroup.selectAll('circle')
+                .transition()
+                .duration(1500)
+                .style('opacity', 1);
+
+            await delay(200);
+            
+
+            for (let outing_idx=0; outing_idx<num_outings; outing_idx++) {
+                const highlightBox = highlightBoxes[outing_idx];
+                highlightBox.transition()
+                    .duration(1500)
+                    .style('opacity', 1);
+            }
+            
+            await delay(3000);
+            
+            // function drawEdges() {
+            //     // Calculate the positions of the corner circles
+            //     // Assuming the leftmost, topmost circle is at (0, 0) and `depthShift` is the depth between layers
+            //     const numCircles = num_comb;
+
+            //     const backTopLeft = [0, 0];
+            //     const backBottomLeft = [0, spacingY * (numCircles - 1)];
+            //     const backTopRight = [spacingX * (numCircles - 1), 0];
+            //     const backBottomRight = [spacingX * (numCircles - 1), spacingY * (numCircles - 1)];
+
+            //     const depthShift = spacingZ * (numCircles - 1);
+            //     const frontTopLeft = [depthShift, depthShift];
+            //     const frontBottomLeft = [depthShift, spacingY * (numCircles - 1) + depthShift];
+            //     const frontTopRight = [spacingX * (numCircles - 1) + depthShift, depthShift];
+            //     const frontBottomRight = [spacingX * (numCircles - 1) + depthShift, spacingY * (numCircles - 1) + depthShift];
+
+            //     // Draw the boundary lines of the cube
+            //     function drawBoundaryLine(from, to, dashed = false) {
+            //         cubeGroup.append('line')
+            //             .attr('x1', eval(from)[0])
+            //             .attr('y1', eval(from)[1])
+            //             .attr('x2', eval(to)[0])
+            //             .attr('y2', eval(to)[1])
+            //             .style('stroke', 'gray')
+            //             .style('stroke-width', 3)
+            //             .style('stroke-dasharray', dashed ? '5, 5' : 'none');
+            //     }
+
+            //     // back face
+            //     drawBoundaryLine('backTopLeft', 'backTopRight');
+            //     drawBoundaryLine('backTopLeft', 'backBottomLeft');
+            //     drawBoundaryLine('backBottomLeft', 'backBottomRight', true);
+            //     drawBoundaryLine('backBottomRight', 'backTopRight', true);
+
+            //     // front face
+            //     drawBoundaryLine('frontTopLeft', 'frontTopRight');
+            //     drawBoundaryLine('frontTopLeft', 'frontBottomLeft');
+            //     drawBoundaryLine('frontBottomLeft', 'frontBottomRight');
+            //     drawBoundaryLine('frontBottomRight', 'frontTopRight');
+
+            //     // Connecting edges
+            //     drawBoundaryLine('backTopLeft', 'frontTopLeft');
+            //     drawBoundaryLine('backTopRight', 'frontTopRight');
+            //     drawBoundaryLine('backBottomLeft', 'frontBottomLeft');
+            //     drawBoundaryLine('backBottomRight', 'frontBottomRight', true);
+            // }
+
+            // drawEdges();
+
+            // iterate through all possible combinations with a black 
+            // rectangle floating above all the outings
+            // and draw a line between the outing and the rectangle
+
+            
+            var finishedDrawing = true;
+            previousCombination = [0, 0, 0];
+            function drawCombination(combination, force = false) {
+                if (!force && !finishedDrawing) {
+                    return;
+                }
+                for (let outing_idx = 0; outing_idx < num_outings; outing_idx++) {
+                    const comb_idx = parseInt(combination[outing_idx]);
+                    const outing = outings[outing_idx][comb_idx];
+                    highlightBox = highlightBoxes[outing_idx];
+                    highlightBox.transition()
+                        .duration(150)
+                        .style('opacity', 1)
+                        .attr('transform', outing.attr('transform'));
+                }
+                
+                // unselect the previous combination
+                i = previousCombination[0];
+                j = previousCombination[1];
+                k = previousCombination[2];
+                scoreCircles[i][j][k]
+                    .classed('selected', false);
+
+                // draw the values of the scores
+                i = combination[0];
+                j = combination[1];
+                k = combination[2];
+                scoreCircles[i][j][k]
+                    .classed('selected', true)
+                    .style('fill', d3.interpolateGreens(scores[i][j][k]));
+                
+                previousCombination = combination;
+            }
+
+            async function drawAllCombination (){
+                if (!finishedDrawing){
+                    return;
+                };
+                finishedDrawing = false;
+                // Reset
+                for (let i = 0; i < num_comb; i++) {
+                    for (let j = 0; j < num_comb; j++) {
+                        for (let k = 0; k < num_comb; k++) {
+                            scoreCircles[i][j][k]
+                                .classed('selected', false)
+                                .style('fill', 'transparent');
+                        }
+                    }
+                }
+                await delay(1000);
+
+                waitTime = 500;
+                for (let i = 0; i < num_comb; i++) {
+                    for (let j = 0; j < num_comb; j++) {
+                        for (let k = 0; k < num_comb; k++) {
+                            drawCombination([i, j, k], force = true);
+                            await delay(waitTime);
+                            waitTime = Math.max(waitTime*0.95, 150);
+                        }
+                    }
+                }
+                finishedDrawing = true;
+            }
+            await drawAllCombination();
+
+            // Once the animation is ready let the user interact with the cube
+            // by hovering the mouse on the circles
+            for (let i = 0; i < num_comb; i++) {
+                for (let j = 0; j < num_comb; j++) {
+                    for (let k = 0; k < num_comb; k++) {
+                        const circle = scoreCircles[i][j][k];
+                        circle.on('mouseover', function() {
+                            drawCombination([i, j, k]);
+                        });
+                        circle.on('mouseout', function() {
+                            circle.classed('selected', false);
+                        });
+                    }
+                }
+            }
+
+        
+            async function drawColorbar() {
+                // draw colorbar for the scores
+                const numStep = num_comb ** num_outings;
+                const colorbar = svg.append('g')
+                    .attr('transform', `translate(${offsets[0]}, 300)`);
+                const colorbarWidth = 750;
+                const colorbarHeight = 20;
+                const colorbarScale = d3.scaleLinear()
+                    .domain([0, 1])
+                    .range([0, colorbarWidth]);
+                const colorbarAxis = d3.axisBottom(colorbarScale)
+                    .tickSize(0)
+                    // just only show Bad and Good
+                    .tickValues([0, 1])
+                    .tickFormat(d => d === 0 ? 'Bad' : 'Good')
+                    .tickPadding(10);
+                colorbar.append('g')
+                    .attr('transform', `translate(0, ${colorbarHeight})`)
+                    .call(colorbarAxis)
+                    .style('font-family', 'EB Garamond')
+                    .style('font-size', 18);
+                const colorScale = d3.scaleLinear()
+                    .domain([0, 0.8])
+                    .interpolate(() => d3.interpolateGreens);
+                const colorbarTiles = colorbar.append("g")
+                    .attr("class", "colorbar")
+                    .selectAll("rect")
+                    .data(d3.range(0, 1, 1/numStep)) // Create a range of values
+                    .enter().append("rect")
+                    .attr("x", (d, i) => i * colorbarWidth / numStep) // Position each bar
+                    .attr("width", colorbarWidth/numStep+2)
+                    .attr("height", colorbarHeight)
+                    .attr("fill", d => colorScale(d))
+                    .on("mouseover", function(d, i) {
+                        // i is normalized to [0, 1]
+                        idx = Math.floor(i * num_comb * num_comb * num_comb);
+                        // idx = origIndices.indexOf(idx);
+                        idx = origIndices[idx];
+                        // find
+                        
+                        i = Math.floor(idx / (num_comb * num_comb));
+                        j = Math.floor((idx % (num_comb * num_comb)) / num_comb);
+                        k = idx % num_comb;
+                        
+                        drawCombination([i, j, k]);
+                        d3.select(this)
+                            .style("stroke", "red")
+                            .style("stroke-width", 3)
+                            // bring to front
+                            .raise();
+
+                    })
+                    .on("mouseout", function() {
+                        d3.select(this).style("stroke-width", 0);
+                    });
+                colorbar.append('text')
+                    .attr('x', colorbarWidth / 2)
+                    .attr('y', -5)
+                    .text('Weekly Schedule score')
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', 'black')
+                    .style('font-size', 20);
+
+                // colorbarAxis.style('opacity', 0)
+                //     .transition()
+                //     .duration(1000)
+                //     .style('opacity', 1);
+                colorbarTiles.style('opacity', 0)
+                    .transition()
+                    .duration(1000)
+                    .style('opacity', 1);
+            }
+
+            drawColorbar();
+
+            for (let outing_idx=0; outing_idx<num_outings; outing_idx++) {
+                for (let comb_idx=0; comb_idx<num_comb; comb_idx++) {
+                    const combGroup = outings[outing_idx][comb_idx];
+                    combGroup.on('mouseover', function() {
+                        copyCombination = previousCombination.slice();
+                        copyCombination[outing_idx] = comb_idx;
+                        drawCombination(copyCombination);
+                    });
+                    combGroup.on('mouseout', function() {
+                        drawCombination(previousCombination);
+                    });
+                }
+            }     
+        };
+        // drawFig2();
+
+        // Set up the Intersection Observer
+        let options = {
+            root: null, // Use the viewport as the root
+            rootMargin: '0px',
+            threshold: 0.9
+        };
+
+        // Create the observer
+        let observer = new IntersectionObserver((entries, observer) => { 
+            entries.forEach(async entry => {
+                // Check if the target is intersecting (visible)
+                if(entry.isIntersecting){
+                    observer.unobserve(entry.target);
+                    // Call the function
+                    await drawFig2();
+
+                    // Optional: Unobserve the target after calling the function
+                }
+            });
+        }, options);
+
+        // Start observing the defined trigger element
+        document.addEventListener("DOMContentLoaded", (event) => {
+            const triggerElement = document.getElementById('fig2');
+            observer.observe(triggerElement);
+        });
+    </script>
+    <p>
+        Once we have a wide population of scored weekly schedules, we can easily rank them, and select the best one.
+        Depending on the preferences and the given circumstances (e.g which people were available, which boats were available, etc.),
+        we will have a different distribution of scores.
+        An example distribution of scores generated with the scheduler is shown in the figure below (left).
+        As we can see, the distribution is not uniform, and only with very low frequency we get a very good schedule.
+        However, we can easily generate some more scores by making small adjustments around the best performing schedule.
+        This is a very simple and effective way to improve the schedule under 100 iterations (right).
+        <div class="svg-fig">
+            <img src="single_step_permutation_improvement.svg">
+            <img src="iterative_permutation_improvement.svg">
+        </div>
+    </p>
+    <p>
+        The Wolfson Scheduler is a very simple tool, however the success of it lies in the efficiency.
+        From this small example we can see that the number of possible combinations grows rapidly.
+        Namely, if we have $N$ number of outings and $K$ number of combination for each day, then the total number of weekly schedules is $K^N$.
+        While the problem grows exponentially with the number of outings, the point of this visual aid is to show that
+        the evaluation has a very neat structure that we can exploit.
+        When we formalize the assignemnts and evaluations as matrix operations, we can use the parallelism of GPUs to speed up the computation.
+        This is the main idea behind the Wolfson Scheduler, because we can trade off not using a more sophisticated optimization algorithm, 
+        with brute force evaluation of a large portion of the possible schedules.
+        After some extensive stress-testing on a customer grade GPU (RTX 4090 - with 24GB of VRAM), 
+        I have gathered the optimal memory-usage and performance characteristics of the scheduler.
+        These results are illustrated below: the baseline of the performance under different scenarios, 
+        peaking at <b>4.5 Billion $\frac{\textrm{schedule}}{\textrm{sec}}$</b>:
+        <div class="svg-fig">
+            <img src="benchmark_peak_performance.svg">
+        </div>
+    </p>
+    <h2>The wholesome stuff...</h2>
+    <p>
+        This project was made out of pure fun, as it was a breath of fresh air from the AI research everyone is doing these days.
+        I hope this can help improve the quality of the rowing outings, and make the lives of the captains and coaches easier.
+        There's a lot of room for improvement, and I hope that this project will inspire others to contribute to it.
+        Also, I can just imagine that there's a hint of a possibility that this project can be used for other purposes as well -
+        if you happen to know any, <a href="https://botcs.github.io/academic/">get in touch</a>.
+        Finally, it goes without saying, this project would not have been possible 
+        without the support of Ms. G. B. Hanna, the discussions with Peter Koepernik and the tremendous feedback from:
+        <br>
+        <div id="contributors">
+            <div class="contributor">
+                <span>Mantas Drelingas</span>
+                <p class="title">Captain</p>
+            </div>
+            <div class="contributor">
+                <span>Ben Hardin</span>
+                <p class="title">Captain</p>
+            </div>
+            <div class="contributor">
+                <span>Rory Copus</span>
+                <p class="title">Head Coach</p>
+            </div>
+        </div>
+    </p>
+</body>
+</html>
