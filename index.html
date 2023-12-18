@@ -170,6 +170,24 @@
             margin-top: 0.1em; /* Provide some space between the name and the title */
         }
 
+        .responsive-container {
+            position: relative;
+            width: 85%; /* Adjust this to set the video width as a percentage of the text container */
+            margin: 0 auto; /* Center the video within the text container */
+            overflow: hidden;
+            /* Use viewport units to dynamically calculate padding-top based on the width of the container */
+            padding-top: calc(85% * 9 / 16); /* Adjust the multiplier (85 in this case) to match the width percentage */
+            height: 0;
+        }
+
+        .responsive-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
         @media (max-width: 900px) {
             svg {
                 max-width: 100%; /* Allow the SVG to fill the container on small screens */
@@ -466,7 +484,9 @@
 
     <h2>How to use?</h2>
     <p style="text-align: center;">
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/7hF-fMSIUC4?si=TV9nJHW2pkq5Sa3v" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        <div class="responsive-container">
+            <iframe src="https://www.youtube.com/embed/7hF-fMSIUC4?si=TV9nJHW2pkq5Sa3v" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
     </p>
     <h2>How does it work?</h2>
     <p>
