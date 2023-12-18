@@ -240,8 +240,8 @@
     </div>
 
     <p>
-        The Wolfson Scheduler (WoSch) is a tool developed to help the colleges organize rowing outings. 
-        WoSch helps by drafting the weekly schedule of outings, accommodating the preferences and skill levels of the rowers,
+        The Wolfson Scheduler is a tool developed to help the colleges organize rowing outings. 
+        The scheduler helps by drafting the weekly schedule of outings, accommodating the preferences and skill levels of the rowers,
         and the scheduling policies of the coaches and captains.
         This project is open-source and available on <a href="https://github.com/botcs/wolfson-scheduler">GitHub</a>.
         The <a href="https://docs.google.com/spreadsheets/d/157TqrQM1fYr8bO1Jwd_hSSI6FQejsT91EfA3m9fDABE/">demo</a> 
@@ -447,14 +447,21 @@
                 }
 
             // Add button to generate a new permutation
-            const button = d3.select('#visualization').append('button')
-                .text('Generate new assignment')
-                .on('click', drawConnections);
+            // const button = d3.select('#visualization').append('button')
+            //     .text('Generate new assignment')
+            //     .on('click', drawConnections);
+
 
             // when the page loads, draw the first permutation
-            d3.select(window).on('load', drawConnections);
+            // d3.select(window).on('load', drawConnections);
+
+            drawConnections();
+            // Set up periodic drawing
+            setInterval(drawConnections, 3000);
         }
-        drawMain();
+        // drawMain();
+        d3.select(window).on('load', drawMain);
+
     </script>
 
     <h2>How to use? (Coming soon)</h2>
