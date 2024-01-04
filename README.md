@@ -16,7 +16,7 @@ git clone git@github.com:botcs/wolfson-scheduler.git
 cd wolfson-scheduler
 
 # Install dependencies
-conda create -f requirements.yml
+conda env create -f requirements.yml
 conda activate scheduler
 
 # Specify the ID of the Google Sheet
