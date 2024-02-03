@@ -51,7 +51,7 @@ def get_availabilities(sheet, **data_ranges):
     for data_name, data_range in zip(
         data_ranges.keys(), data_ranges.values()
     ):
-        data_value = sheet.get_values(
+        data_value = sheet.get(
             range_name=data_range,
             combine_merged_cells=True,
             pad_values=True,
@@ -460,13 +460,18 @@ if __name__ == "__main__":
 
     logging_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(
+        filename="server.log",
         level=logging_level,
         format="[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d - %(funcName)s()] %(message)s",
+        encoding="utf-8",
     )
     
     while True:
         try:
             main(args)
+        except KeyboardInterrupt:
+            logging.info("Shutting down")
+            break
         except Exception as e:
             traceback_str = traceback.format_exc()
             logging.error(traceback_str)
