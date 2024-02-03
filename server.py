@@ -446,7 +446,7 @@ def launch_periodic_trigger(spreadsheet, time_interval):
         logging.info(f"Checking {trigger_cell} for trigger")
         # check if the trigger_cell has the value "update"
         trigger_value = worksheet.acell(trigger_cell).value
-        if trigger_value.lower() == "update":
+        if trigger_value is not None and trigger_value.lower() == "update":
             logging.info("Updating suggestions")
             worksheet.update_acell(trigger_cell, "Updating...")
             reset_progress_bar(spreadsheet)
