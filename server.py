@@ -19,48 +19,6 @@ from solver import solve_week
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-
-def append_empty_cells(clamped_data_values, data_range):
-    """
-    GSHEET API returns a list of lists but it strips empty TRAILING cells
-    and strips empty TRAILING rows
-    """
-
-    # find out the width and height of the range from `data_range`
-    start_cell, end_cell = data_range.split(":")
-    start_col, start_row = re.findall(r"\d+|\D+", start_cell)
-    end_col, end_row = re.findall(r"\d+|\D+", end_cell)
-    # the columns can be A-Z or AA-ZZ or AAA-ZZZ
-    # so we need to convert the column letters to numbers
-    # and then calculate the number of columns
-    if len(start_col) == 1 and len(end_col) == 1:
-        num_cols = ord(end_col) - ord(start_col) + 1
-    else:
-        start_col_int = 0
-        for i, col in enumerate(start_col[::-1]):
-            start_col_int += (ord(col) - 64) * (26**i)
-
-        end_col_int = 0
-        for i, col in enumerate(end_col[::-1]):
-            end_col_int += (ord(col) - 64) * (26**i)
-
-        num_cols = end_col_int - start_col_int + 1
-
-    # calculate the number of rows
-    num_rows = int(end_row) - int(start_row) + 1
-
-    # append empty cells to the end of each row
-    new_data_values = []
-    for row in clamped_data_values:
-        row.extend([""] * (num_cols - len(row)))
-        new_data_values.append(row)
-
-    # append empty rows to the end of the data
-    new_data_values.extend([[""] * num_cols] * (num_rows - len(new_data_values)))
-
-    return new_data_values
-
-
 def get_availabilities(sheet, **data_ranges):
     """Get the availabilities from the spreadsheet
     A column is for first names, B column is for last names
@@ -83,16 +41,23 @@ def get_availabilities(sheet, **data_ranges):
     """
 
     # name_values, property_values, date_values, availability_values, boat_size_values = sheet.batch_get([name_range, property_range, date_range, availability_range])
-    data_values = sheet.batch_get(list(data_ranges.values()))
+    # data_values = sheet.batch_get(list(data_ranges.values()))
 
     # Because GSHET API returns a list of lists but it strips empty TRAILING cells
     # and strips empty TRAILING rows we need to append empty cells to the end of each row
     # and append empty rows to the end of the table to match the size of the range
 
-    full_values = {}
-    for data_name, data_range, data_value in zip(
-        data_ranges.keys(), data_ranges.values(), data_values
+    data_values = {}
+    for data_name, data_range in zip(
+        data_ranges.keys(), data_ranges.values()
     ):
+        data_value = sheet.get_values(
+            range_name=data_range,
+            combine_merged_cells=True,
+            pad_values=True,
+            maintain_size=True,
+        )
+
         # check for empty values
         if not data_value:
             error_msg = f"No data found for {data_name}"
@@ -100,15 +65,15 @@ def get_availabilities(sheet, **data_ranges):
             raise RuntimeError(error_msg)
 
         # fill the tables to the correct size
-        full_values[data_name] = append_empty_cells(data_value, data_range)
+        data_values[data_name] = data_value
 
     # name_values = full_values['name']
     # property_values = full_values['property']
-    rower_values = full_values["rower"]
+    rower_values = data_values["rower"]
 
-    date_values = full_values["date"]
-    availability_values = full_values["availability"]
-    boat_size_values = full_values["boat_size"]
+    date_values = data_values["date"]
+    availability_values = data_values["availability"]
+    boat_size_values = data_values["boat_size"]
 
     # turn str to list of ints for boat_size_values using json.loads
     assert len(boat_size_values) == 1, "boat_size_values should be a single row"
@@ -288,7 +253,7 @@ def update_schedule_sheet(spreadsheet, results):
 
     # get the weekdays like "Monday" from "Jul 17 07:45 - 09:15 outing"
     weekdays = [
-        "2023 " + " ".join(date.split()[:2]) for date in assignments.keys()
+        f"{datetime.now().year} " + " ".join(date.split()[:2]) for date in assignments.keys()
     ]
     weekdays = [datetime.strptime(date, "%Y %b %d").strftime("%A") for date in weekdays]
 
@@ -479,7 +444,10 @@ def main(args):
         TARGET_SPREADSHEET_ID=args.target_spreadsheet_id, 
         SERVICE_ACCOUNT_JSON=args.service_account_json,
     )
-    launch_periodic_trigger(spreadsheet=spreadsheet, time_interval=3)
+    if args.run_once:
+        create_suggestions(spreadsheet)
+    else:
+        launch_periodic_trigger(spreadsheet=spreadsheet, time_interval=3)
 
 
 if __name__ == "__main__":
@@ -487,6 +455,7 @@ if __name__ == "__main__":
     parser.add_argument("--target_spreadsheet_id", type=str, required=True)
     parser.add_argument("--service_account_json", type=str, required=True)
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--run_once", action="store_true")
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.debug else logging.INFO
