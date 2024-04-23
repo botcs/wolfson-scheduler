@@ -1,0 +1,13 @@
+name: scheduler
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - pandas=1.5.3
+  - pip=23.1.2
+  - psutil=5.9.0
+  - python=3.11
+  - pytorch=2.1.2
+  - tqdm=4.65.0
+  - pip:
+      - gspread==6.0.0

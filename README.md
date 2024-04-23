@@ -15,9 +15,17 @@ In order to run the algorithm you will need to do the following steps:
 git clone git@github.com:botcs/wolfson-scheduler.git
 cd wolfson-scheduler
 
-# Install dependencies
-conda env create -f requirements.yml
+# Install dependencies for CPU
+# (Works with Intel, M1 and M2 silicon processors)
+conda env create -f req-cpu.yml
 conda activate scheduler
+
+
+# IMPORTANT!!!
+# If you want GPU acceleration install the GPU dependencies
+conda env create -f req-gpu.yml
+conda activate scheduler-gpu
+
 
 # Specify the ID of the Google Sheet
 TARGET_ID=<ID of your copy of the scheduler Google Sheets>
