@@ -814,7 +814,7 @@ def iterative_permutation_improvement(
     assignments_per_week,
     properties,
     weights,
-    num_iterations=10,
+    num_iterations,
     callback=lambda x: None,
 ):
     total_scores = evaluate_assignments_per_week(
@@ -840,7 +840,7 @@ def iterative_permutation_improvement(
         if (time.time() - start) > 1:
             start = time.time()
             callback(
-                f"Running iterative improvement: {int(it_idx/num_iterations*100)}%"
+                f"Running iterative improvement: {int((it_idx+1)/num_iterations*100)}%"
             )
 
         if permuted_scores.max() > best_score:
@@ -1026,7 +1026,7 @@ def solve_week(
     prop_df,
     weights,
     boat_sizes,
-    num_iterations=200,
+    num_iterations=3,
     device=None,
     callback=lambda x: None,
 ):
